@@ -8,6 +8,9 @@ a [hackpad](https://hackpad.hackclub.com) macropad
 - PCB-mount style, no top plate
 - optional USB port for daisy chaining keyboards
 
+## cad
+The CAD is in an Onshape document available [here](https://cad.onshape.com/documents/859a6718b395782d916274d9/w/acb2d55d003e03c3719d4ca6/e/6f143904c3132775702816f5?renderMode=0&uiState=6834dff6784e7633979328d8).
+
 ## a note on the custom firmware
 because i want to use the RGB LEDs to monitor system load, i had to write custom firmware, because neither qmk nor kmk supports getting info from the host like that.
 
