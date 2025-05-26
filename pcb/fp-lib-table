@@ -1,0 +1,5 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "OPL")(type "KiCad")(uri "${KIPRJMOD}/OPL_Kicad_Library/Seeed Studio XIAO Series Library")(options "")(descr ""))
+  (lib (name "Keebio")(type "KiCad")(uri "${KIPRJMOD}/Keebio-Parts.pretty")(options "")(descr ""))
+)
