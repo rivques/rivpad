@@ -29,5 +29,15 @@ the USB port is optional. it's intended to forward HID packets from a second key
 - 1x PCB
 - 4x M3x10mm bolts
 - 4x M3 heat-set inserts
-- 4x anti-slip rubber feet
+- *optional* 4x anti-slip rubber feet
 - *optional* 1x USB-A female connector
+
+## screenshots
+### overall
+![image](https://github.com/user-attachments/assets/3efabe02-31a4-4a67-9546-6f19268824bf)
+### case
+![image](https://github.com/user-attachments/assets/e16de3be-e51c-4036-8cf8-bd1ad5a9fdc5)
+### schematic
+![image](https://github.com/user-attachments/assets/48244d1e-706e-4fa2-8b0e-a67a7d5fea0c)
+### pcb
+![image](https://github.com/user-attachments/assets/38cfee9a-ece0-47ab-bcb4-d871ab55d88d)
