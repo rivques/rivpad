@@ -1,0 +1,1 @@
+You can see the full CAD on [Onshape](https://cad.onshape.com/documents/859a6718b395782d916274d9/w/acb2d55d003e03c3719d4ca6/e/6f143904c3132775702816f5?renderMode=0&uiState=6834dff6784e7633979328d8).
