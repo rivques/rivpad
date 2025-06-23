@@ -1,0 +1,13 @@
+[Unit]
+Description=Rivpad Daemon Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/rivques/Documents/rivpad/venv/bin/python /home/rivques/Documents/rivpad/daemon/daemon.py
+WorkingDirectory=/home/rivques/Documents/rivpad/daemon
+Restart=always
+User=%u
+
+[Install]
+WantedBy=default.target

@@ -7,19 +7,21 @@ import displayio
 import usb_cdc
 import adafruit_displayio_ssd1306
 import i2cdisplaybus
-from adafruit_display_text.label import Label
+from lib.adafruit_display_text.label import Label
 import terminalio
 import usb_hid
-from adafruit_hid.keyboard import Keyboard
-from adafruit_hid.keycode import Keycode
+from lib.adafruit_hid.keyboard import Keyboard
+from lib.adafruit_hid.keycode import Keycode
 import keypad
 
 keyboard = Keyboard(usb_hid.devices)
 
 matrix = keypad.KeyMatrix(row_pins=[board.D10, board.D9, board.D8], column_pins=[board.D0, board.D1, board.D2])
 
-pixels = neopixel.NeoPixel(board.D3, 16, brightness=0.2, auto_write=False, pixel_order=neopixel.GRB)
+pixels = neopixel.NeoPixel(board.D3, 16, brightness=0.1, auto_write=False)
+pixel_map = [15, 14, 13, 12, 8, 9, 10, 11, 7, 6, 5, 4, 0, 1, 2, 3]
 
+displayio.release_displays()  # Release any existing displays
 oled_bus = i2cdisplaybus.I2CDisplayBus(board.I2C(), device_address=0x3C)
 oled = adafruit_displayio_ssd1306.SSD1306(oled_bus, width=128, height=32)
 group = displayio.Group()
@@ -30,26 +32,26 @@ group.append(label)
 # keycodes from https://github.com/jtroo/kanata/blob/main/parser/src/keys/mod.rs
 base_kbd_layer = [
     "layer", # the layer change key
-    0xF8, # mute microphone
-    154, # select window
+    216, # mute microphone (handled by cinnamon shortcut)
+    154, # select window (handled by cinnamon shortcut)
     140, # open terminal
     144, # open file manager
     150, # open browser
-    (Keycode.SHIFT, Keycode.GUI), # super+shift to push windows
-    372, # toggle maximize window
-    212, # take screenshot to clipboard
+    (Keycode.SHIFT, Keycode.GUI), # super+shift to push windows, handled by cinnamon
+    231, # toggle maximize window (handled by cinnamon shortcut)
+    212, # take screenshot to clipboard (handled by cinnamon shortcut)
 ]
 
 power_kbd_layer = [
     "layer", # the layer change key
     None, 
-    142, # sleep
+    142, # sleep (handled by cinnamon shortcut)
     None,
     None,
     None,
     None,
     None,
-    116, # power off
+    116, # power off (handled by cinnamon shortcut)
 ]
 
 power_layer_active = False
@@ -65,19 +67,19 @@ system_resources = [
     },
     {
         "name": "CPUpk",
-        "hue": 30,  # Orange
+        "hue": 50,  # Orange
     },
     {
         "name": "RAM",
-        "hue": 60,  # Yellow
+        "hue": 100,  # Yellow
     },
     {
         "name": "Disk",
-        "hue": 180,  # Cyan
+        "hue": 200,  # Cyan
     },
     {
         "name": "Net",
-        "hue": 120,  # Green
+        "hue": 150,  # Green
     },
     {
         "name": "GPU",
@@ -85,11 +87,11 @@ system_resources = [
     },
     {
         "name": "VRAM",
-        "hue": 240,  # Blue
+        "hue": 250,  # Blue
     },
 ]
 
-def hsv_to_rgb(hue, saturation=1.0, value=1.0):
+def hsv_to_rgb_raw(hue, saturation=1.0, value=1.0):
     """Convert HSV to RGB color space."""
     hue = float(hue) / 360.0  # Normalize hue to [0, 1)
     if saturation == 0.0:
@@ -116,12 +118,18 @@ def hsv_to_rgb(hue, saturation=1.0, value=1.0):
         # unreachable
         return (0, 0, 0)
 
+def hsv_to_rgb(hue, saturation=1.0, value=1.0):
+    """Convert HSV to RGB color space and scale to 0-255 range."""
+    r, g, b = hsv_to_rgb_raw(hue, saturation, value)
+    return (int(r * 255), int(g * 255), int(b * 255))
+
 while True:
     # Check for key presses
     event = matrix.events.get()
     if event:
         key_number = event.key_number
         key = base_kbd_layer[key_number] if not power_layer_active else power_kbd_layer[key_number]
+        print(f"Key {key_number} {'pressed' if event.pressed else 'released'} on {'base' if not power_layer_active else 'power'}: {key}")  # Debug output
         if event.pressed:
             if key == "layer":
                 power_layer_active = True
@@ -148,20 +156,25 @@ while True:
         resource_values = [int(x) for x in data if x.isdigit()]
         if len(data) != len(system_resources):
             # there was an error in the data, skip this iteration
+            print(f"Error: Expected {len(system_resources)} values, got {len(data)}. Data: {data}")
             continue
 
         # pick the biggest 4 values and grab their corresponding names/hues
         cpu_av_index = 0
         cpu_pk_index = 1
-        if resource_values[cpu_pk_index] > resource_values[cpu_av_index] * 1.2:
-            # Remove CPUav if CPUpk is significantly higher
-            resource_values.pop(cpu_av_index)
-            system_resources.pop(cpu_av_index)
-        else:
-            # Remove CPUpk otherwise
-            resource_values.pop(cpu_pk_index)
-            system_resources.pop(cpu_pk_index)
-        top_resources = sorted(zip(resource_values, system_resources), reverse=True)[:4]
+        top_resources = sorted(zip(resource_values, system_resources), reverse=True, key=lambda x: x[0])[:5]
+        # trim the list to 4, either by eliminating the lower of CPUav or CPUpk, or by removing the lowest value if both aren't present
+        cpu_av_present = any(resource["name"] == "CPUav" for _, resource in top_resources)
+        cpu_pk_present = any(resource["name"] == "CPUpk" for _, resource in top_resources)
+        if cpu_av_present and cpu_pk_present:
+            # both are present, keep the one with the higher value
+            if resource_values[cpu_av_index] > resource_values[cpu_pk_index] - 20:
+                top_resources = [r for r in top_resources if r[1]["name"] != "CPUpk"]
+            else:
+                top_resources = [r for r in top_resources if r[1]["name"] != "CPUav"]
+        elif not cpu_av_present and not cpu_pk_present:
+            # neither is present, just keep the top 4
+            top_resources = top_resources[:4]
 
         # update the neopixels
         for i, (value, resource) in enumerate(top_resources):
@@ -177,8 +190,12 @@ while True:
                     pixel_values.append(rgb_last)
                 else:
                     pixel_values.append((0, 0, 0))
-            pixels[i * 4:i * 4 + 4] = pixel_values
+            print(f"Resource {resource['name']}: {value}% - RGB: {pixel_values} at index {i}")  # Debug output
+            for pix_idx in range(i * 4, i * 4 + 4):
+                pixels[pixel_map[pix_idx]] = pixel_values[pix_idx % 4]
         pixels.show()
 
         # update the OLED display
-        label.text = "|".join(f"{resource['name']}" for _, resource in top_resources)
+        label_text = "|".join(f"{resource['name']}" for _, resource in top_resources)
+        label_text += "\n" + "|".join(f"{value:^{len(resource['name'])-1}}%" for value, resource in top_resources)
+        label.text = label_text

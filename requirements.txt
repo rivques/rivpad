@@ -1,0 +1,3 @@
+psutil
+pyserial
+nvidia-ml-py3
