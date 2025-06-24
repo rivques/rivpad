@@ -32,26 +32,26 @@ group.append(label)
 # keycodes from https://github.com/jtroo/kanata/blob/main/parser/src/keys/mod.rs
 base_kbd_layer = [
     "layer", # the layer change key
-    216, # mute microphone (handled by cinnamon shortcut)
-    154, # select window (handled by cinnamon shortcut)
-    140, # open terminal
-    144, # open file manager
-    150, # open browser
-    (Keycode.SHIFT, Keycode.GUI), # super+shift to push windows, handled by cinnamon
-    231, # toggle maximize window (handled by cinnamon shortcut)
-    212, # take screenshot to clipboard (handled by cinnamon shortcut)
+    Keycode.KEYPAD_ONE, # mute microphone (handled by cinnamon shortcut)
+    Keycode.KEYPAD_TWO, # toggle audio output device (handled by kanata)
+    Keycode.KEYPAD_THREE, # open terminal (handled by cinnamon shortcut)
+    Keycode.KEYPAD_FOUR, # open file manager (handled by cinnamon shortcut)
+    Keycode.KEYPAD_FIVE, # open browser (handled by cinnamon shortcut)
+    (Keycode.SHIFT, Keycode.GUI), # super+shift to push windows, handled by cinnamon natively
+    Keycode.KEYPAD_SEVEN, # toggle maximize window (handled by cinnamon shortcut)
+    Keycode.KEYPAD_EIGHT, # take screenshot to clipboard (handled by cinnamon shortcut)
 ]
 
 power_kbd_layer = [
     "layer", # the layer change key
     None, 
-    142, # sleep (handled by cinnamon shortcut)
+    Keycode.KEYPAD_ZERO, # sleep (handled by cinnamon shortcut)
     None,
     None,
     None,
     None,
     None,
-    116, # power off (handled by cinnamon shortcut)
+    Keycode.POWER, # open power menu (handled by cinnamon natively)
 ]
 
 power_layer_active = False
@@ -172,7 +172,7 @@ while True:
                 top_resources = [r for r in top_resources if r[1]["name"] != "CPUpk"]
             else:
                 top_resources = [r for r in top_resources if r[1]["name"] != "CPUav"]
-        elif not cpu_av_present and not cpu_pk_present:
+        else:
             # neither is present, just keep the top 4
             top_resources = top_resources[:4]
 
@@ -192,7 +192,17 @@ while True:
                     pixel_values.append((0, 0, 0))
             print(f"Resource {resource['name']}: {value}% - RGB: {pixel_values} at index {i}")  # Debug output
             for pix_idx in range(i * 4, i * 4 + 4):
-                pixels[pixel_map[pix_idx]] = pixel_values[pix_idx % 4]
+                if pix_idx > 15:
+                    print(f"Warning: pix_idx {pix_idx} is out of range for pixel_map (len {len(pixel_map)})")
+                    print(f"i: {i}, num_full_pixels: {num_full_pixels}, value: {value}, resource: {resource}")
+                    print(f"data: {data}, resource_values: {resource_values}")
+                    continue
+                try:
+                    pixels[pixel_map[pix_idx]] = pixel_values[pix_idx % 4]
+                except IndexError:
+                    print(f"IndexError: Either pix_idx {pix_idx} is out of range for pixel_map (len {len(pixel_map)}),")
+                    print(f"there aren't enough pixel_values (len {len(pixel_values)}) for the pixel at index {pix_idx},")
+                    print(f"or the mapped value {pixel_map[pix_idx]} is out of range for pixels (len 16)")
         pixels.show()
 
         # update the OLED display
