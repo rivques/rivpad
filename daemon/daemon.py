@@ -14,7 +14,8 @@ ports = serial.tools.list_ports.comports()
 selected_port = None
 for port in ports:
     if port.vid == 0x1209 and port.pid == 0x0001:
-        selected_port = port.device
+        if selected_port is None or int(port.device[-1]) > int(selected_port[-1]):
+            selected_port = port.device
 
 print(f"Using serial port: {selected_port}")  # Log the selected serial port
 
